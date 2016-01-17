@@ -38,6 +38,8 @@ module NHL
       attr_reader "#{property.to_sym}"
     end
 
+    attr_reader :season
+
     # NHL::Team constructor
     # ==== Options
     #   * :season - The NHL season requested. Must be in the format of "20142015"

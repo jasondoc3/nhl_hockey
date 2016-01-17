@@ -1,10 +1,12 @@
 require 'net/http'
 require 'uri'
 require 'json'
-require 'pry'
 
 # A module for wrapping the nhl.com stat API into a ruby gem
 module NHL
+
+  # The number of teams in the NHL
+  NUMBER_OF_TEAMS = 30
 
   # The part of the URL that every API call uses
   API_BASE_URL = "http://www.nhl.com/stats/rest".freeze
@@ -30,7 +32,7 @@ module NHL
   end
 end
 
-require './nhl_hockey/team.rb'
+require_relative 'nhl_hockey/team.rb'
 
 begin
   NHL::Team.set_abbreviations

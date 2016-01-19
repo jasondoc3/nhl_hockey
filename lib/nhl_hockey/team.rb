@@ -35,7 +35,7 @@ module NHL
     # Makes all the properties of the NHL::Team object obtained from nhl.com
     # accessible
     NHL_API_TRANSLATIONS.keys.each do |property|
-      attr_reader "#{property.to_sym}"
+      attr_reader "#{property}".to_sym
     end
 
     attr_reader :season
@@ -63,6 +63,12 @@ module NHL
     def refresh
       nhl_hash = self.class.get(abbreviation: @abbreviation)[0]
       set_instance_vars_from_nhl_hash(nhl_hash)
+
+      if @players
+        @players = nil
+        self.players
+      end
+
       return true
     end
 
@@ -100,6 +106,13 @@ module NHL
       output << "  season: #{@season}\n"
       output << "}\n"
       return output
+    end
+
+    # Returns all the players of this NHL team object as NHL::Players
+    def players
+      @players ||= Player.get(nhl_site_id: @nhl_site_id, season: @season).map do |nhl_hash|
+        Player.new(nhl_hash: nhl_hash)
+      end
     end
 
     # Returns the team abbbrevations retrieved from nhl.com

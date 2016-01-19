@@ -33,6 +33,7 @@ module NHL
 end
 
 require_relative 'nhl_hockey/team.rb'
+require_relative 'nhl_hockey/player.rb'
 
 begin
   NHL::Team.set_abbreviations

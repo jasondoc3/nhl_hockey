@@ -4,8 +4,11 @@ module NHL
   # Maps an NHL::Player object to an NHL team obtained from the nhl.com API
   class Player
 
-    # A String containing the URL to access the nhl.com team API
-    STAT_SUMMARY_URL = "#{API_BASE_URL}/grouped/skaters/season/skatersummary?cayenneExp=gameTypeId=2+and+".freeze
+    # The base Api url for player related nhl.com requests
+    PLAYER_BASE_URL = "#{API_BASE_URL}/grouped/skaters/season".freeze
+
+    # A String containing the URL to access the nhl.com player stats
+    STAT_SUMMARY_URL = "#{PLAYER_BASE_URL}/skatersummary?cayenneExp=gameTypeId=2+and+".freeze
 
     # A Hash mapping the attribute names in the NHL::Player class
     # to the attribute names used by nhl.com
@@ -19,7 +22,7 @@ module NHL
       "penalty_minutes"         => "penaltyMinutes",
       "first_name"              => "playerFirstName",
       "last_name"               => "playerLastName",
-      "nhl_player_id"           => "playerId",
+      "nhl_site_id"             => "playerId",
       "name"                    => "playerName",
       "position"                => "playerPositionCode",
       "team_abbreviation"       => "playerTeamsPlayedFor",
@@ -78,6 +81,11 @@ module NHL
       else
         raise raise ArgumentError, "Could not find a player with the given parameters"
       end
+    end
+
+    def bio
+      @bio ||= Bio.new(self)
+      return @bio
     end
 
     # A prettier output

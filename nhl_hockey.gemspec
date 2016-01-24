@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.description = "A wrapper for SAP NHL API"
   s.authors     = ["Jason Dougherty"]
   s.email       = 'jasondoc3@sbcglobal.net'
-  s.files       = ["lib/nhl_hockey.rb", "lib/nhl_hockey/team.rb", "lib/nhl_hockey/player.rb"]
+  s.files       = ["lib/nhl_hockey.rb", "lib/nhl_hockey/team.rb", "lib/nhl_hockey/player.rb", "lib/nhl_hockey/player_bio.rb"]
   s.homepage    = 'http://rubygems.org/gems/nhl_hockey'
   s.license     = 'MIT'
 end

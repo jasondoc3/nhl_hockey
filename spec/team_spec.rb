@@ -1,5 +1,5 @@
 require 'minitest/autorun'
-require '../lib/nhl_hockey.rb'
+require_relative '../lib/nhl_hockey.rb'
 
 class TestTeam < MiniTest::Test
 
@@ -27,5 +27,11 @@ class TestTeam < MiniTest::Test
     assert_equal(single_team_nhl_hash[NHL::Team::NHL_API_TRANSLATIONS['name']], 'Anaheim Ducks')
     assert_equal(single_team_nhl_hash[NHL::Team::NHL_API_TRANSLATIONS['wins']], 54)
   end
-  
+
+  def test_players
+    players = @team.players
+    assert_equal(NHL::Player, players.last.class)
+    assert_equal(players.first.season, '20092010')
+    assert_includes(players.map(&:name), 'Ryane Clowe')
+  end
 end

@@ -1,5 +1,7 @@
 module NHL
 
+  # The NHL::Player class
+  # Maps an NHL::Player object to an NHL team obtained from the nhl.com API
   class Player
 
     # A String containing the URL to access the nhl.com team API
@@ -30,7 +32,8 @@ module NHL
       "shifts_per_game"         => "shiftsPerGame",
       "shooting_percentage"     => "shootingPctg",
       "shots"                   => "shots",
-      "time_on_ice_per_game"    => "timeOnIcePerGame"
+      "time_on_ice_per_game"    => "timeOnIcePerGame",
+      "season"                  => "seasonId"
     }.freeze
 
     # Makes all the properties of the NHL::Player object obtained from nhl.com
@@ -39,13 +42,45 @@ module NHL
       attr_reader "#{property}".to_sym
     end
 
+    # NHL::Player constructor
+    # ==== Options
+    #   * :season - The NHL season requested. Must be in the format of "20142015"
+    #   * :nhl_hash - If you already have the Hash for this player, you can use it to save an HTTP request
+    #   * :name - If you know the player name e.g. "Patrick Kane"
+    #   * :nhl_site_id - If the nhl_site_id is known ahead of time
+    #
+    # ==== Examples
+    #   NHL::Player.new(name: "Alex Ovechkin")
+    #   NHL::Player.new(name: "Ben Smith", team: "CHI", season: "20141015")
+    #
     def initialize(options = {})
-      @season = options[:season] || NHL.current_season
       nhl_hash = options[:nhl_hash]
-      # nhl_hash ||= self.class.get({ abbreviation: @abbreviation }.merge(options))[0]
-      set_instance_vars_from_nhl_hash(nhl_hash)
+
+      unless nhl_hash
+        if options[:nhl_site_id]
+          nhl_hash = self.get(options)[0]
+        elsif options[:name]
+          self.class.get(options).each do |player_hash|
+            name_matches = options[:name].downcase == player_hash[NHL_API_TRANSLATIONS["name"]].downcase
+
+            if options[:team]
+              team_matches = player_hash[NHL_API_TRANSLATIONS["team_abbreviation"]].upcase.include?(options[:team])
+              nhl_hash = player_hash and break if name_matches && team_matches
+            else
+              nhl_hash = player_hash and break if name_matches
+            end
+          end
+        end
+      end
+
+      if nhl_hash
+        set_instance_vars_from_nhl_hash(nhl_hash)
+      else
+        raise raise ArgumentError, "Could not find a player with the given parameters"
+      end
     end
 
+    # A prettier output
     def to_s
       output = "{\n"
       NHL_API_TRANSLATIONS.keys.each do |property|
@@ -58,6 +93,7 @@ module NHL
       return output
     end
 
+    # Returns the team or teams that this player has played for the current season
     def teams
       return @teams if @teams
 
@@ -67,10 +103,20 @@ module NHL
 
     end
 
+    # Gets data from nhl.com
+    # If no options are given, it gets every player's stats for the current nhl season
+    # ==== Options
+    #   * :season - The NHL season requested. Must be in the format of "20142015"
+    #   * :team_abbreviation - The NHL team requested, unless all are wanted
+    #
+    # ==== Examples
+    #   NHL::Player.get(team_abbreviation: "SJS", season: "20142015") -> array
+    #
     def self.get(options = {})
       url = "#{STAT_SUMMARY_URL}seasonId=#{options[:season] || NHL.current_season}"
-      url << "+and+teamId=#{NHL::Team::ABBREVIATIONS_TO_NHL_SITE_IDS[options[:abbreviation]]}" if options[:abbreviation]
-      url << "+and+teamId=#{options[:nhl_site_id]}" if options[:nhl_site_id]
+      url << "+and+teamId=#{NHL::Team::ABBREVIATIONS_TO_NHL_SITE_IDS[options[:team_abbreviation]]}" if options[:team_abbreviation]
+      url << "+and+teamId=#{options[:nhl_site_team_id]}" if options[:nhl_site_team_id]
+      url << "+and+playerId=#{options[:nhl_site_id]}" if options[:nhl_site_id]
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       request = Net::HTTP::Get.new(uri.request_uri)
@@ -85,6 +131,7 @@ module NHL
     # from nhl.com
     def set_instance_vars_from_nhl_hash(nhl_hash)
       NHL_API_TRANSLATIONS.each do |translation, property|
+        nhl_hash[property] = nhl_hash[property].to_s if translation == 'season'
         instance_variable_set("@#{translation}", nhl_hash[property])
       end
     end

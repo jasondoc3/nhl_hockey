@@ -29,7 +29,8 @@ module NHL
       "shots_against_per_game"  => "shotsAgainstPerGame",
       "shots_for_per_game"      => "shotsForPerGame",
       "abbreviation"            => "teamAbbrev",
-      "name"                    => "teamFullName"
+      "name"                    => "teamFullName",
+      "season"                  => "seasonId"
     }.freeze
 
     # Makes all the properties of the NHL::Team object obtained from nhl.com
@@ -37,8 +38,6 @@ module NHL
     NHL_API_TRANSLATIONS.keys.each do |property|
       attr_reader "#{property}".to_sym
     end
-
-    attr_reader :season
 
     # NHL::Team constructor
     # ==== Options
@@ -53,7 +52,6 @@ module NHL
       raise ArgumentError, "The abbreviation you entered is invalid or does not match an NHL Team" unless self.class.abbreviations.include?(abbreviation.upcase)
 
       @abbreviation = abbreviation.upcase
-      @season = options[:season] || NHL.current_season
       nhl_hash = options[:nhl_hash]
       nhl_hash ||= self.class.get({ abbreviation: @abbreviation }.merge(options))[0]
       set_instance_vars_from_nhl_hash(nhl_hash)
@@ -110,7 +108,7 @@ module NHL
 
     # Returns all the players of this NHL team object as NHL::Players
     def players
-      @players ||= Player.get(nhl_site_id: @nhl_site_id, season: @season).map do |nhl_hash|
+      @players ||= Player.get(nhl_site_team_id: @nhl_site_id, season: @season).map do |nhl_hash|
         Player.new(nhl_hash: nhl_hash)
       end
     end
@@ -154,6 +152,7 @@ module NHL
     # from nhl.com
     def set_instance_vars_from_nhl_hash(nhl_hash)
       NHL_API_TRANSLATIONS.each do |translation, property|
+        nhl_hash[property] = nhl_hash[property].to_s if translation == 'season'
         instance_variable_set("@#{translation}", nhl_hash[property])
       end
     end

@@ -1,3 +1,5 @@
+require 'date'
+
 module NHL
   class Player
     class Bio
@@ -16,7 +18,8 @@ module NHL
         "draft_year"          => "playerDraftYear",
         "handedness"          => "playerShootsCatches",
         "weight"              => "playerWeight",
-        "height"              => "playerHeight"
+        "height"              => "playerHeight",
+        "age"                 => "age"
       }.freeze
 
       # Makes all the properties of the NHL::Player::Bio object obtained from nhl.com
@@ -26,11 +29,13 @@ module NHL
       end
 
       attr_reader :nhl_player_site_id
+      attr_reader :age
 
       def initialize(player)
         @nhl_player_site_id = player.nhl_site_id
         nhl_hash = self.class.get(nhl_player_site_id: @nhl_player_site_id, season: player.season)[0]
         set_instance_vars_from_nhl_hash(nhl_hash)
+        set_age
       end
 
       # A prettier output
@@ -67,6 +72,18 @@ module NHL
       def set_instance_vars_from_nhl_hash(nhl_hash)
         NHL_API_TRANSLATIONS.each do |translation, property|
           instance_variable_set("@#{translation}", nhl_hash[property])
+        end
+      end
+
+      # Contains logic to set the age instance variable for this bio
+      def set_age
+        birthday = Date.parse(@birthday)
+        today = Date.today
+
+        if (birthday.month == today.month && birthday.day <= today.day) || (birthday.month < today.month)
+          @age = today.year - birthday.year
+        else
+          @age = today.year - birthday.year - 1
         end
       end
     end

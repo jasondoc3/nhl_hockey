@@ -4,10 +4,6 @@ module NHL
   # Maps an NHL::Team object to an NHL team obtained from the nhl.com API
   class Team
 
-    # A Hash mapping the traditional NHL team abbrevations ("SJS")
-    # to the team ids stored in their database
-    ABBREVIATIONS_TO_NHL_SITE_IDS = Hash.new
-
     # A String containing the URL to access the nhl.com team API
     STAT_SUMMARY_URL = "#{API_BASE_URL}/grouped/teams/season/teamsummary?cayenneExp=gameTypeId=2+and+".freeze
 
@@ -43,18 +39,37 @@ module NHL
     # ==== Options
     #   * :season - The NHL season requested. Must be in the format of "20142015"
     #   * :nhl_hash - If you already have the Hash for this team, you can use it to save an HTTP request
+    #   * :city - The city where the team is located
+    #   * :name - The name of the team
+    #   * :abbreviation - The team abbrevation i.e. 'SJS'
+    #   * :nhl_site_id - The team_id stored in nhl.com's database
     #
     # ==== Examples
-    #   NHL::Team.new("SJS")
-    #   NHL::Team.new("SJS", season: "20142015')
+    #   NHL::Team.new(abbreviation: "SJS")
+    #   NHL::Team.new(name: "Sharks" season: "20142015')
+    #   NHL::Team.new(city: "San Jose")
     #
-    def initialize(abbreviation, options = {})
-      raise ArgumentError, "The abbreviation you entered is invalid or does not match an NHL Team" unless self.class.abbreviations.include?(abbreviation.upcase)
-
-      @abbreviation = abbreviation.upcase
+    def initialize(options = {})
       nhl_hash = options[:nhl_hash]
-      nhl_hash ||= self.class.get({ abbreviation: @abbreviation }.merge(options))[0]
-      set_instance_vars_from_nhl_hash(nhl_hash)
+    
+      unless nhl_hash
+
+        if options[:nhl_site_id]
+          nhl_hash = self.class.get(options)[0]
+        else
+          self.class.get(options).each do |team_hash|
+            nhl_hash = team_hash and break if options[:name] && team_hash[NHL_API_TRANSLATIONS["name"]].downcase.include?(options[:name].downcase)
+            nhl_hash = team_hash and break if options[:city] && team_hash[NHL_API_TRANSLATIONS["name"]].downcase.include?(options[:city].downcase)
+            nhl_hash = team_hash and break if options[:abbreviation] && team_hash[NHL_API_TRANSLATIONS["abbreviation"]].upcase == options[:abbreviation].upcase
+          end
+        end
+      end
+      
+      if nhl_hash
+        set_instance_vars_from_nhl_hash(nhl_hash)
+      else
+        raise ArgumentError, "Could not find a team with the given parameters"
+      end
     end
 
     # Reload the data for this team from nhl.com
@@ -114,14 +129,11 @@ module NHL
     end
 
     # Returns the team abbbrevations retrieved from nhl.com
-    def self.abbreviations
-      return ABBREVIATIONS_TO_NHL_SITE_IDS.keys
-    end
-
-    # Sets ABBREVIATIONS_TO_NHL_SITE_IDS after loading the data using ::get
-    def self.set_abbreviations
-      self.get.each { |team| ABBREVIATIONS_TO_NHL_SITE_IDS[ team[NHL_API_TRANSLATIONS["abbreviation"] ] ] = team[NHL_API_TRANSLATIONS["nhl_site_id"]] }
-      ABBREVIATIONS_TO_NHL_SITE_IDS.freeze
+    # 
+    # ==== Arguments
+    #   * season - Optional. Pass in a season like '20152016'
+    def self.abbreviations(season = NHL.current_season)
+      return self.get(season: season).map { |team| team[NHL_API_TRANSLATIONS["abbreviation"]] }
     end
 
     # Gets data from nhl.com
@@ -129,7 +141,7 @@ module NHL
     # If not given a team abbreviation, returns stats for all teams
     # ==== Options
     #   * :season - The NHL season requested. Must be in the format of "20142015"
-    #   * :abbreviation - The NHL team requested, unless all are wanted
+    #   * :nhl_site_id - If you have it, the id of the team in nhl.com's databases
     #
     # ==== Examples
     #   NHL::Team.get(season: "20142015")                      -> array
@@ -137,7 +149,7 @@ module NHL
     #
     def self.get(options = {})
       url = "#{STAT_SUMMARY_URL}seasonId=#{options[:season] || NHL.current_season}"
-      url << "+and+teamId=#{ABBREVIATIONS_TO_NHL_SITE_IDS[options[:abbreviation]]}" if options[:abbreviation]
+      url << "+and+teamId=#{options[:nhl_site_id]}" if options[:nhl_site_id]
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       request = Net::HTTP::Get.new(uri.request_uri)

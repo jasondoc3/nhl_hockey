@@ -107,14 +107,12 @@ module NHL
     # If no options are given, it gets every player's stats for the current nhl season
     # ==== Options
     #   * :season - The NHL season requested. Must be in the format of "20142015"
-    #   * :team_abbreviation - The NHL team requested, unless all are wanted
     #
     # ==== Examples
-    #   NHL::Player.get(team_abbreviation: "SJS", season: "20142015") -> array
+    #   NHL::Player.get(season: "20142015") -> array
     #
     def self.get(options = {})
       url = "#{STAT_SUMMARY_URL}seasonId=#{options[:season] || NHL.current_season}"
-      url << "+and+teamId=#{NHL::Team::ABBREVIATIONS_TO_NHL_SITE_IDS[options[:team_abbreviation]]}" if options[:team_abbreviation]
       url << "+and+teamId=#{options[:nhl_site_team_id]}" if options[:nhl_site_team_id]
       url << "+and+playerId=#{options[:nhl_site_id]}" if options[:nhl_site_id]
       uri = URI.parse(url)

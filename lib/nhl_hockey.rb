@@ -36,7 +36,7 @@ require_relative 'nhl_hockey/team.rb'
 require_relative 'nhl_hockey/player.rb'
 
 begin
-  NHL::Team.set_abbreviations
+  NHL::Team.get
 rescue => e
   puts "==============="
   puts "An error has occured while loading the nhl_hockey gem. Nhl.com might have changed their API."

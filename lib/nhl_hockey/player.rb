@@ -2,7 +2,7 @@ module NHL
 
   # The NHL::Player class
   # Maps an NHL::Player object to an NHL team obtained from the nhl.com API
-  class Player
+  class Player < Entity
 
     # The base Api url for player related nhl.com requests
     PLAYER_BASE_URL = "#{API_BASE_URL}/grouped/skaters/season".freeze
@@ -88,19 +88,6 @@ module NHL
       return @bio
     end
 
-    # A prettier output
-    def to_s
-      output = "{\n"
-      NHL_API_TRANSLATIONS.keys.each do |property|
-        instance_var = "@#{property}"
-        output << "  #{property}: #{self.instance_variable_get(instance_var)}\n"
-      end
-
-      output << "  season: #{@season}\n"
-      output << "}\n"
-      return output
-    end
-
     # Returns the team or teams that this player has played for the current season
     def teams
       return @teams if @teams
@@ -130,17 +117,5 @@ module NHL
       response_body = JSON.parse(response.body)["data"]
       return response_body
     end
-
-    private
-
-    # Sets the attributes of this intance from data retrieved
-    # from nhl.com
-    def set_instance_vars_from_nhl_hash(nhl_hash)
-      NHL_API_TRANSLATIONS.each do |translation, property|
-        nhl_hash[property] = nhl_hash[property].to_s if translation == 'season'
-        instance_variable_set("@#{translation}", nhl_hash[property])
-      end
-    end
   end
-
 end

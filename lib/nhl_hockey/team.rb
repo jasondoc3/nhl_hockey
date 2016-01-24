@@ -2,7 +2,7 @@ module NHL
   
   # The NHL::Team class
   # Maps an NHL::Team object to an NHL team obtained from the nhl.com API
-  class Team
+  class Team < Entity
 
     # A String containing the URL to access the nhl.com team API
     STAT_SUMMARY_URL = "#{API_BASE_URL}/grouped/teams/season/teamsummary?cayenneExp=gameTypeId=2+and+".freeze
@@ -85,42 +85,6 @@ module NHL
       return true
     end
 
-    # A prettier output
-    # ==== Example
-    #   irb(main):003:0> puts NHL::Team.new("SJS", season: "20082009")
-    #   {
-    #      games_played: 82
-    #      faceoff_win_percentage: 0.5378
-    #      goals_against: 199
-    #      games_glayed: 82
-    #      goals_for: 251
-    #      losses: 18
-    #      wins: 53
-    #      ties: 0
-    #      overtime_losses: 11
-    #      power_play_percentage: 0.2416
-    #      points: 117
-    #      nhl_site_id: 28
-    #      shots_against_per_game: 27.1707
-    #      shots_for_per_game: 33.1707
-    #      abbreviation: SJS
-    #      name: San Jose Sharks
-    #      season: 20082009
-    #   }
-    #   => nil
-    #
-    def to_s
-      output = "{\n"
-      NHL_API_TRANSLATIONS.keys.each do |property|
-        instance_var = "@#{property}"
-        output << "  #{property}: #{self.instance_variable_get(instance_var)}\n"
-      end
-
-      output << "  season: #{@season}\n"
-      output << "}\n"
-      return output
-    end
-
     # Returns all the players of this NHL team object as NHL::Players
     def players
       @players ||= Player.get(nhl_site_team_id: @nhl_site_id, season: @season).map do |nhl_hash|
@@ -156,17 +120,6 @@ module NHL
       response = http.request(request)
       response_body = JSON.parse(response.body)["data"]
       return response_body
-    end
-
-    private
-
-    # Sets the attributes of this intance from data retrieved
-    # from nhl.com
-    def set_instance_vars_from_nhl_hash(nhl_hash)
-      NHL_API_TRANSLATIONS.each do |translation, property|
-        nhl_hash[property] = nhl_hash[property].to_s if translation == 'season'
-        instance_variable_set("@#{translation}", nhl_hash[property])
-      end
     end
   end
 end

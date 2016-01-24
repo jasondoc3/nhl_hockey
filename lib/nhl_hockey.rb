@@ -32,6 +32,7 @@ module NHL
   end
 end
 
+require_relative 'nhl_hockey/entity.rb'
 require_relative 'nhl_hockey/team.rb'
 require_relative 'nhl_hockey/player.rb'
 require_relative 'nhl_hockey/player_bio.rb'
